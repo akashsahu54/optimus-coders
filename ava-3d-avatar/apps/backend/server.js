@@ -5,15 +5,19 @@ import { openAIChain, parser } from "./modules/openAI.mjs";
 import { lipSync } from "./modules/lip-sync.mjs";
 import { sendDefaultMessages, defaultResponse } from "./modules/defaultMessages.mjs";
 import { convertAudioToText } from "./modules/whisper.mjs";
+import fastVoiceRouter from "./routes/fastVoice.mjs";
 
 dotenv.config();
 
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "50mb" })); // Increased limit for audio
 app.use(cors());
 const port = 3000;
+
+// Fast voice-to-voice routes
+app.use(fastVoiceRouter);
 
 app.get("/voices", async (req, res) => {
   res.send(await voice.getVoices(elevenLabsApiKey));
