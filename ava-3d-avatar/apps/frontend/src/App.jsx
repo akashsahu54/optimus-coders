@@ -11,11 +11,23 @@ import { CommandConsole } from "./components/console/CommandConsole";
 import { VoiceVisualizer } from "./components/effects/VoiceVisualizer";
 import { BootSequence } from "./components/effects/BootSequence";
 import { useSpeech } from "./hooks/useSpeech";
+import { VapiProvider, useVapi } from "./hooks/useVapi";
+import { VapiControls } from "./components/VapiControls";
 
-function App() {
-  const { tts, loading, message, startRecording, stopRecording, recording } = useSpeech();
+function AppContent() {
+  const [useVapiMode, setUseVapiMode] = useState(false);
+  const { isCallActive: vapiActive } = useVapi();
+  const { tts, loading, message, conversationMode, toggleConversationMode, recording, vadIsSpeaking, setCurrentAudio } = useSpeech();
   const [sessionTime, setSessionTime] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
+
+  // Disable conversation mode when Vapi is active
+  useEffect(() => {
+    if (vapiActive && conversationMode) {
+      console.log("🔄 Vapi active - disabling conversation mode to prevent conflicts");
+      toggleConversationMode();
+    }
+  }, [vapiActive]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -40,25 +52,30 @@ function App() {
     { label: 'AI STATUS', value: loading ? 'PROCESSING' : 'ONLINE', status: loading ? 'warning' : 'active' },
     { label: 'CPU LOAD', value: loading ? '87%' : '23%', status: loading ? 'warning' : 'active' },
     { label: 'NETWORK', value: 'STABLE', status: 'success' },
-    { label: 'VOICE INPUT', value: recording ? 'ACTIVE' : 'STANDBY', status: recording ? 'active' : 'success' },
+    { label: 'VOICE MODE', value: conversationMode ? 'AUTO' : 'MANUAL', status: conversationMode ? 'active' : 'success' },
   ];
 
   const rightStats = [
     { label: 'USER ID', value: 'USR_001', status: 'active' },
     { label: 'SESSION TIME', value: formatTime(sessionTime), status: 'active' },
     { label: 'ENERGY LEVEL', value: '98%', status: 'success' },
-    { label: 'MODE', value: recording ? 'VOICE' : 'CHAT', status: 'active' },
+    { label: 'MODE', value: conversationMode ? (vadIsSpeaking ? 'LISTENING' : 'READY') : 'STANDBY', status: 'active' },
   ];
 
   const getStatus = () => {
     if (loading) return 'NEURAL PROCESSING...';
-    if (recording) return 'VOICE INPUT ACTIVE';
+    if (conversationMode) {
+      if (vadIsSpeaking) return 'LISTENING TO USER';
+      if (recording) return 'RECORDING VOICE';
+      if (message) return 'AVATAR SPEAKING';
+      return 'AUTO MODE - READY';
+    }
     if (message) return 'TRANSMITTING DATA';
-    return 'SYSTEM READY';
+    return 'MANUAL MODE';
   };
 
   return (
-    <>
+      <>
       {!bootComplete && <BootSequence onComplete={() => setBootComplete(true)} />}
       
       <CyberpunkLayout>
@@ -80,19 +97,55 @@ function App() {
       </AIReactor>
       
       {/* Voice Visualizer */}
-      <VoiceVisualizer isActive={recording} />
+      <VoiceVisualizer isActive={recording || vadIsSpeaking} />
       
-      {/* Command Console */}
-      <CommandConsole
-        onSend={handleSend}
-        onVoiceStart={startRecording}
-        onVoiceStop={stopRecording}
-        isRecording={recording}
-        isLoading={loading}
-        isProcessing={!!message}
-      />
+      {/* Vapi Controls - New! */}
+      <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000 }}>
+        <VapiControls />
+      </div>
+      
+      {/* Command Console - Disabled when Vapi is active */}
+      {!vapiActive && (
+        <CommandConsole
+          onSend={handleSend}
+          conversationMode={conversationMode}
+          onToggleConversation={toggleConversationMode}
+          isRecording={recording}
+          isLoading={loading}
+          isProcessing={!!message}
+          vadIsSpeaking={vadIsSpeaking}
+        />
+      )}
+      
+      {/* Vapi Active Indicator */}
+      {vapiActive && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '12px 24px',
+          background: 'rgba(34, 197, 94, 0.2)',
+          border: '1px solid rgb(34, 197, 94)',
+          borderRadius: '8px',
+          color: 'rgb(34, 197, 94)',
+          fontWeight: 'bold',
+          zIndex: 1000,
+          backdropFilter: 'blur(10px)'
+        }}>
+          🎙️ VAPI VOICE MODE ACTIVE - Speak naturally
+        </div>
+      )}
       </CyberpunkLayout>
-    </>
+      </>
+  );
+}
+
+function App() {
+  return (
+    <VapiProvider>
+      <AppContent />
+    </VapiProvider>
   );
 }
 

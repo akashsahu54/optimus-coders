@@ -19,19 +19,29 @@ const lipSync = async ({ messages }) => {
           break;
         } catch (error) {
           console.error(`⚠️ Attempt ${attempt + 1}/${MAX_RETRIES} failed for message ${index}:`, error.message);
+          
+          if (error.message === 'AUTH_FAILED' || error.message === 'RATE_LIMITED') {
+            console.error(`❌ Eleven Labs API limit reached. Skipping audio generation.`);
+            message.audio = "";
+            message.lipsync = { mouthCues: [] };
+            break;
+          }
+          
           if (error.response && error.response.status === 429) {
             if (attempt < MAX_RETRIES - 1) {
               console.log(`⏳ Rate limited, retrying in ${RETRY_DELAY}ms...`);
               await delay(RETRY_DELAY);
             } else {
               console.error(`❌ Max retries reached. Eleven Labs quota exceeded.`);
-              // Set a default silent audio or skip
               message.audio = "";
-              message.lipsync = [];
+              message.lipsync = { mouthCues: [] };
               return;
             }
-          } else {
-            throw error;
+          } else if (attempt === MAX_RETRIES - 1) {
+            console.error(`❌ Failed after ${MAX_RETRIES} attempts`);
+            message.audio = "";
+            message.lipsync = { mouthCues: [] };
+            return;
           }
         }
       }
