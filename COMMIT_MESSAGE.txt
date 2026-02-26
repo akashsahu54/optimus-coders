@@ -1,0 +1,9 @@
+feat: Add cyberpunk neural interface theme
+
+Transform 3D avatar app with neon aesthetics, HUD system, and terminal-style UI.
+
+- Add 18 cyberpunk components (AI reactor, HUD panels, command console, effects)
+- Implement neon color palette (cyan/magenta/green) with glow effects
+- Add animated grid background, boot sequence, and voice visualizer
+- Update styling with Orbitron/Share Tech Mono fonts and glass morphism
+- Include comprehensive documentation (transformation guide, component architecture, visual reference)
