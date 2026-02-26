@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVA - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 2rem;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-card.angry .number {
+            color: #ff6b6b;
+        }
+        .stat-card.urgent .number {
+            color: #ffa500;
+        }
+        .stat-card.resolved .number {
+            color: #51cf66;
+        }
+        .alerts-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .alerts-section h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .alert-item {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-left: 4px solid #ff6b6b;
+            background: #fff5f5;
+            border-radius: 5px;
+        }
+        .alert-item.urgent {
+            border-left-color: #ffa500;
+            background: #fff8e1;
+        }
+        .alert-time {
+            font-size: 0.85rem;
+            color: #999;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        .badge.angry {
+            background: #ff6b6b;
+            color: white;
+        }
+        .badge.urgent {
+            background: #ffa500;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 AVA Admin Dashboard</h1>
+        <p>Real-time Business Intelligence & Analytics</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Calls Today</h3>
+            <div class="number" id="totalCalls">0</div>
+        </div>
+        <div class="stat-card angry">
+            <h3>Angry Customers</h3>
+            <div class="number" id="angryCalls">0</div>
+        </div>
+        <div class="stat-card urgent">
+            <h3>Urgent Escalations</h3>
+            <div class="number" id="urgentCalls">0</div>
+        </div>
+        <div class="stat-card resolved">
+            <h3>Resolved Issues</h3>
+            <div class="number" id="resolvedCalls">0</div>
+        </div>
+    </div>
+
+    <div class="alerts-section">
+        <h2>🚨 Recent Alerts</h2>
+        <div id="alertsList">
+            <div class="alert-item urgent">
+                <strong>User #1234</strong> <span class="badge angry">ANGRY</span>
+                <p>"Main 3 din se call kar raha hoon!"</p>
+                <span class="alert-time">2 minutes ago</span>
+            </div>
+            <div class="alert-item">
+                <strong>User #5678</strong> <span class="badge urgent">URGENT</span>
+                <p>"Mera payment stuck hai, please help!"</p>
+                <span class="alert-time">5 minutes ago</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate real-time updates with realistic increments
+        let stats = {
+            total: 47,
+            angry: 8,
+            urgent: 5,
+            resolved: 34
+        };
+
+        function updateStats() {
+            // Increment stats realistically
+            if (Math.random() > 0.5) {
+                stats.total += Math.floor(Math.random() * 3);
+                if (Math.random() > 0.7) stats.angry += 1;
+                if (Math.random() > 0.8) stats.urgent += 1;
+                if (Math.random() > 0.6) stats.resolved += 1;
+            }
+
+            document.getElementById('totalCalls').textContent = stats.total;
+            document.getElementById('angryCalls').textContent = stats.angry;
+            document.getElementById('urgentCalls').textContent = stats.urgent;
+            document.getElementById('resolvedCalls').textContent = stats.resolved;
+        }
+
+        // Add new alert dynamically
+        function addNewAlert() {
+            const alerts = [
+                { user: '#' + Math.floor(Math.random() * 9999), badge: 'angry', text: 'Main 3 din se call kar raha hoon!', time: 'Just now' },
+                { user: '#' + Math.floor(Math.random() * 9999), badge: 'urgent', text: 'Mera payment stuck hai!', time: 'Just now' },
+                { user: '#' + Math.floor(Math.random() * 9999), badge: 'angry', text: 'Koi response nahi mil raha!', time: 'Just now' }
+            ];
+
+            const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
+            const alertsList = document.getElementById('alertsList');
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-item ${randomAlert.badge === 'urgent' ? 'urgent' : ''}`;
+            alertDiv.innerHTML = `
+                <strong>User ${randomAlert.user}</strong> <span class="badge ${randomAlert.badge}">${randomAlert.badge.toUpperCase()}</span>
+                <p>"${randomAlert.text}"</p>
+                <span class="alert-time">${randomAlert.time}</span>
+            `;
+            
+            alertsList.insertBefore(alertDiv, alertsList.firstChild);
+            
+            // Keep only last 5 alerts
+            while (alertsList.children.length > 5) {
+                alertsList.removeChild(alertsList.lastChild);
+            }
+
+            // Animate new alert
+            alertDiv.style.animation = 'slideIn 0.5s ease';
+        }
+
+        // Update stats every 8 seconds
+        setInterval(updateStats, 8000);
+        updateStats();
+
+        // Add new alert every 12 seconds
+        setInterval(addNewAlert, 12000);
+    </script>
+    
+    <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</body>
+</html>
