@@ -1,130 +1,232 @@
-# AVA System Architecture
+
+# AVA - AI Virtual Assistant Architecture
 
 ## 🏗 High-Level Flow
 
 ```
-User speaks → Speech-to-Text → Emotion Detection → Avatar Response → Dashboard Update
+User Input (Text/Voice) → Backend API → Groq AI (LLaMA 3.3 70B) → Eleven Labs TTS → 
+Rhubarb Lip-Sync → Frontend 3D Avatar → Animated Response
 ```
 
 ## 📦 Components
 
-### 1. Frontend (User Interface)
-**Location:** `/frontend`
-**Tech:** React.js / Next.js
+### 1. Frontend (3D Avatar Interface)
+**Location:** `ava-3d-avatar/apps/frontend/`
+**Tech:** React + Vite + Three.js + React Three Fiber
+**Port:** 5173
 **Responsibilities:**
-- Voice input capture (Web Speech API)
-- Avatar animation display
-- Emotion badge display
-- Conversation history
-- Real-time UI updates
+- 3D avatar rendering and animation
+- Real-time lip-sync visualization
+- Chat interface (text input)
+- Voice input capture (optional)
+- Audio playback
+- Facial expression control
 
 **Key Files:**
-- `pages/index.js` - Main user interface
-- `components/Avatar.js` - Avatar component (TODO)
-- `utils/speech.js` - Speech recognition (TODO)
+- `src/App.jsx` - Main application component
+- `src/components/Avatar.jsx` - 3D avatar with animations
+- `src/components/ChatInterface.jsx` - User input interface
+- `src/components/Scenario.jsx` - Scene setup
+- `src/hooks/useSpeech.jsx` - Speech synthesis and API calls
+- `src/constants/facialExpressions.js` - Emotion mappings
+- `src/constants/visemesMapping.js` - Phoneme to viseme mapping
+- `public/models/avatar.glb` - 3D avatar model
+- `public/animations/*.fbx` - Animation files
 
-### 2. Backend (API & Processing)
-**Location:** `/backend`
-**Tech:** Node.js + Express
+**Dependencies:**
+- `@react-three/fiber` - React renderer for Three.js
+- `@react-three/drei` - Useful helpers for R3F
+- `three` - 3D graphics library
+
+### 2. Backend (AI & TTS Processing)
+**Location:** `ava-3d-avatar/apps/backend/`
+**Tech:** Node.js + Express + LangChain
+**Port:** 3000
 **Responsibilities:**
-- Emotion detection API
-- Conversation storage
-- Alert generation
-- Dashboard data aggregation
+- AI conversation handling (Groq)
+- Text-to-speech generation (Eleven Labs)
+- Lip-sync data generation (Rhubarb)
+- Audio processing (FFmpeg)
+- Response formatting with emotions
 
 **Key Endpoints:**
-- `POST /api/detect-emotion` - Analyze text emotion
-- `GET /api/stats` - Dashboard statistics
-- `GET /api/alerts` - Recent alerts
+- `POST /tts` - Text message → AI response + audio + lip-sync
+- `POST /sts` - Speech-to-text → AI response (optional)
+- `GET /voices` - List available Eleven Labs voices
+
+**Key Files:**
+- `server.js` - Express server setup
+- `modules/openAI.mjs` - Groq AI integration (LangChain)
+- `modules/elevenLabs.mjs` - Text-to-speech API
+- `modules/lip-sync.mjs` - Audio processing orchestration
+- `modules/rhubarbLipSync.mjs` - Phoneme generation
+- `modules/whisper.mjs` - Speech-to-text (optional)
+- `modules/defaultMessages.mjs` - Fallback responses
+- `utils/audios.mjs` - Audio file management
+- `utils/files.mjs` - File system utilities
+- `ffmpeg.exe` - Audio conversion tool
+- `rhubarb.exe` - Lip-sync analysis tool
+
+**Dependencies:**
+- `@langchain/groq` - Groq AI integration
+- `elevenlabs-node` - Eleven Labs TTS
+- `express` - Web server
+- `cors` - Cross-origin requests
+- `dotenv` - Environment variables
 
 ### 3. Dashboard (Admin Panel)
-**Location:** `/dashboard`
+**Location:** `dashboard/`
 **Tech:** HTML/CSS/JS (Vanilla)
 **Responsibilities:**
-- Display call statistics
-- Show angry/urgent alerts
-- Real-time updates
-- Business intelligence
+- Display conversation statistics
+- Monitor system health
+- View conversation history
+- Analytics dashboard
 
 ## 🔄 Data Flow
 
 ### User Interaction Flow:
-1. User clicks "Speak" button
+1. **User Input**: User types message in chat interface
+2. **API Request**: Frontend sends POST to `/tts` endpoint
+3. **AI Processing**: 
+   - Backend receives message
+   - Groq AI (LLaMA 3.3 70B) generates intelligent response
+   - Response includes text, facial expression, and animation type
+4. **TTS Generation**:
+   - Eleven Labs converts text to natural speech (MP3)
+   - FFmpeg converts MP3 to WAV format
+5. **Lip-Sync Generation**:
+   - Rhubarb analyzes WAV file
+   - Generates phoneme timestamps (mouth shapes)
+   - Creates viseme data for lip-sync
+6. **Response Delivery**:
+   - Backend sends JSON with:
+     - Text response
+     - Base64 encoded audio
+     - Lip-sync data (mouth cues)
+     - Facial expression
+     - Animation name
+7. **Frontend Rendering**:
+   - Audio plays through speakers
+   - 3D avatar animates (idle → talking)
+   - Mouth syncs with speech (visemes)
+   - Facial expression changes (smile, sad, etc.)
+   - Returns to idle state when done
+
+### Voice Input Flow (Optional):
+1. User clicks microphone button
 2. Browser captures audio (Web Speech API)
-3. Audio → Text conversion
-4. Text sent to backend `/api/detect-emotion`
-5. Backend analyzes emotion (angry/calm/urgent)
-6. Response sent back with emotion label
-7. Frontend updates avatar expression
-8. Avatar speaks response (Text-to-Speech)
-9. Dashboard receives alert (if urgent/angry)
+3. Audio sent to backend `/sts` endpoint
+4. Whisper converts speech to text
+5. Follows same flow as text input above
 
-### Dashboard Update Flow:
-1. Backend detects angry/urgent emotion
-2. Alert stored in memory/database
-3. Dashboard polls `/api/alerts` every 5 seconds
-4. New alerts displayed in real-time
-5. Statistics updated automatically
+## 🎯 AI & Animation Logic
 
-## 🎯 Emotion Detection Logic
-
-**Current Implementation (Simple):**
+### Groq AI Configuration:
 ```javascript
-Angry Keywords: frustrated, angry, din se, problem, nahi ho raha
-Urgent Keywords: urgent, immediately, abhi, turant, emergency
+Model: llama-3.3-70b-versatile
+Temperature: 0.2 (more focused responses)
+Context: Customer support agent personality
+Output: Structured JSON with text, emotion, animation
 ```
 
-**Future Enhancement:**
-- Integrate Hume AI API
-- Train custom ML model
-- Voice tone analysis
-- Sentiment scoring
+### Facial Expressions:
+- `smile` - Happy, positive responses
+- `sad` - Empathetic, apologetic responses
+- `angry` - Frustrated scenarios (rare)
+- `surprised` - Unexpected information
+- `funnyFace` - Playful responses
+- `default` - Neutral state
+
+### Animations:
+- `Idle` - Default standing pose
+- `TalkingOne` - Primary talking animation
+- `TalkingThree` - Alternative talking animation
+- `SadIdle` - Sad standing pose
+- `Defeated` - Disappointed gesture
+- `Angry` - Frustrated gesture
+- `Surprised` - Surprised reaction
+- `DismissingGesture` - Dismissive hand wave
+- `ThoughtfulHeadShake` - Thinking gesture
+
+### Lip-Sync Phonemes (Rhubarb):
+```
+A, B, C, D, E, F, G, H, X (silence)
+Mapped to 3D morph targets for realistic mouth movement
+```
 
 ## 🚀 Deployment Strategy
 
 ### Development:
 ```bash
-# Frontend
-cd frontend && npm run dev
+# Backend (Terminal 1)
+cd ava-3d-avatar/apps/backend
+npm start
+# Runs on http://localhost:3000
 
-# Backend
-cd backend && npm run dev
-
-# Dashboard
-Open dashboard/index.html in browser
+# Frontend (Terminal 2)
+cd ava-3d-avatar/apps/frontend
+npm run dev
+# Runs on http://localhost:5173
 ```
 
-### Production:
-- Frontend: Vercel / Netlify
-- Backend: Railway / Render
-- Database: MongoDB / PostgreSQL
+### Environment Variables (.env):
+```bash
+# Groq AI (Free Tier)
+GROQ_API_KEY=gsk_xxx...
 
-## 🎨 Avatar Integration Options
+# Eleven Labs TTS
+ELEVEN_LABS_API_KEY=sk_xxx...
+ELEVEN_LABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+ELEVEN_LABS_MODEL_ID=eleven_multilingual_v2
+```
 
-1. **Ready Player Me** (Recommended)
-   - Easy integration
-   - Customizable avatars
-   - Free tier available
+### Production Considerations:
+- **Frontend**: Vercel / Netlify / GitHub Pages
+- **Backend**: Railway / Render / Heroku
+- **API Keys**: Use paid tiers for higher rate limits
+- **CDN**: Serve 3D models and animations from CDN
+- **Caching**: Cache audio responses for common queries
+- **Load Balancing**: Multiple backend instances
+- **Database**: Store conversation history (optional)
 
-2. **Live2D**
-   - More expressive
-   - Requires more setup
+## 🎨 3D Avatar Technology
 
-3. **Custom SVG Animation**
-   - Lightweight
-   - Full control
+### Current Implementation:
+- **Format**: GLB (GL Transmission Format)
+- **Renderer**: Three.js via React Three Fiber
+- **Animations**: FBX format (11 animations)
+- **Morph Targets**: Facial expressions and visemes
+- **Lighting**: Three-point lighting setup
+- **Camera**: Orbital controls for viewing
+
+### Avatar Features:
+- **Realistic 3D Model**: Human-like appearance
+- **Smooth Animations**: Blended transitions
+- **Lip-Sync**: Real-time phoneme-based mouth movement
+- **Facial Expressions**: Dynamic emotion display
+- **Idle Animations**: Natural breathing and movement
+- **Responsive**: Adapts to different screen sizes
 
 ## 📊 Tech Stack Summary
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| Frontend | React/Next.js | User interface |
-| Backend | Node.js + Express | API server |
-| Speech Input | Web Speech API | Voice capture |
-| Speech Output | Web Speech API | Voice response |
-| Emotion AI | Keyword-based (MVP) | Emotion detection |
-| Dashboard | Vanilla JS | Admin panel |
-| Styling | CSS-in-JS | UI design |
+| **AI Model** | Groq LLaMA 3.3 70B | Intelligent conversation |
+| **TTS** | Eleven Labs | Natural voice synthesis |
+| **Lip-Sync** | Rhubarb | Phoneme generation |
+| **Audio Processing** | FFmpeg | Format conversion |
+| **Frontend Framework** | React + Vite | Fast development |
+| **3D Rendering** | Three.js + R3F | Avatar visualization |
+| **Backend** | Node.js + Express | API server |
+| **AI Framework** | LangChain | Structured AI outputs |
+| **Styling** | Tailwind CSS | UI design |
+| **Voice Input** | Web Speech API | Optional voice capture |
+
+### API Services:ier, fast inference, 70B parameter model
+- **Eleven Labs**: High-quality TTS, multilingual support
+- **Rate Limits**: ~30 req/min (Groq free tier)
+- **Groq**: Free t
 
 ## 🏆 Demo Script
 
