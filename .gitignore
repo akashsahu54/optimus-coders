@@ -9,6 +9,10 @@ out/
 build/
 dist/
 
+# Backend executables (download separately)
+ffmpeg.exe
+rhubarb.exe
+
 # Environment variables
 .env
 .env.local

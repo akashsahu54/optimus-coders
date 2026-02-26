@@ -13,7 +13,7 @@ import { BootSequence } from "./components/effects/BootSequence";
 import { useSpeech } from "./hooks/useSpeech";
 
 function App() {
-  const { tts, loading, message, startRecording, stopRecording, recording } = useSpeech();
+  const { tts, loading, message, conversationMode, toggleConversationMode, recording, vadIsSpeaking, setCurrentAudio } = useSpeech();
   const [sessionTime, setSessionTime] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
 
@@ -40,21 +40,26 @@ function App() {
     { label: 'AI STATUS', value: loading ? 'PROCESSING' : 'ONLINE', status: loading ? 'warning' : 'active' },
     { label: 'CPU LOAD', value: loading ? '87%' : '23%', status: loading ? 'warning' : 'active' },
     { label: 'NETWORK', value: 'STABLE', status: 'success' },
-    { label: 'VOICE INPUT', value: recording ? 'ACTIVE' : 'STANDBY', status: recording ? 'active' : 'success' },
+    { label: 'VOICE MODE', value: conversationMode ? 'AUTO' : 'MANUAL', status: conversationMode ? 'active' : 'success' },
   ];
 
   const rightStats = [
     { label: 'USER ID', value: 'USR_001', status: 'active' },
     { label: 'SESSION TIME', value: formatTime(sessionTime), status: 'active' },
     { label: 'ENERGY LEVEL', value: '98%', status: 'success' },
-    { label: 'MODE', value: recording ? 'VOICE' : 'CHAT', status: 'active' },
+    { label: 'MODE', value: conversationMode ? (vadIsSpeaking ? 'LISTENING' : 'READY') : 'STANDBY', status: 'active' },
   ];
 
   const getStatus = () => {
     if (loading) return 'NEURAL PROCESSING...';
-    if (recording) return 'VOICE INPUT ACTIVE';
+    if (conversationMode) {
+      if (vadIsSpeaking) return 'LISTENING TO USER';
+      if (recording) return 'RECORDING VOICE';
+      if (message) return 'AVATAR SPEAKING';
+      return 'AUTO MODE - READY';
+    }
     if (message) return 'TRANSMITTING DATA';
-    return 'SYSTEM READY';
+    return 'MANUAL MODE';
   };
 
   return (
@@ -80,16 +85,17 @@ function App() {
       </AIReactor>
       
       {/* Voice Visualizer */}
-      <VoiceVisualizer isActive={recording} />
+      <VoiceVisualizer isActive={recording || vadIsSpeaking} />
       
       {/* Command Console */}
       <CommandConsole
         onSend={handleSend}
-        onVoiceStart={startRecording}
-        onVoiceStop={stopRecording}
+        conversationMode={conversationMode}
+        onToggleConversation={toggleConversationMode}
         isRecording={recording}
         isLoading={loading}
         isProcessing={!!message}
+        vadIsSpeaking={vadIsSpeaking}
       />
       </CyberpunkLayout>
     </>

@@ -12,22 +12,120 @@ import morphTargets from "../constants/morphTargets";
 export function Avatar(props) {
   const { nodes, materials, scene } = useGLTF("/models/avatar.glb");
   const { animations } = useGLTF("/models/animations.glb");
-  const { message, onMessagePlayed } = useSpeech();
+  const { message, onMessagePlayed, setCurrentAudio } = useSpeech();
   const [lipsync, setLipsync] = useState();
   const [setupMode, setSetupMode] = useState(false);
+  const audioRef = useRef(null);
+  const isPlayingRef = useRef(false); // Prevent multiple simultaneous plays
+  const currentMessageIdRef = useRef(null); // Track which message we're playing
+
+  useEffect(() => {
+    // Cleanup function to stop any playing audio on unmount
+    return () => {
+      if (audioRef.current && !audioRef.current.paused) {
+        console.log("🧹 Component unmounting - cleaning up audio");
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!message) {
       setAnimation("Idle");
+      // Clean up audio if exists
+      if (audioRef.current && !audioRef.current.paused) {
+        console.log("🛑 Stopping previous audio - no message");
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      audioRef.current = null;
+      isPlayingRef.current = false;
+      currentMessageIdRef.current = null;
+      setAudio(null);
       return;
     }
+    
+    // Create a unique ID for this message to prevent duplicate processing
+    const messageId = `${message.animation}_${message.audio?.substring(0, 50)}`;
+    
+    // If we're already playing this exact message, skip
+    if (currentMessageIdRef.current === messageId) {
+      console.log("⚠️ Already processing this message, skipping duplicate");
+      return;
+    }
+    
+    // If we're playing a different message, stop it first
+    if (isPlayingRef.current && audioRef.current) {
+      console.log("🛑 Stopping previous message to play new one");
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      isPlayingRef.current = false;
+    }
+    
+    // Mark this message as being processed
+    currentMessageIdRef.current = messageId;
+    
     setAnimation(message.animation);
     setFacialExpression(message.facialExpression);
     setLipsync(message.lipsync);
-    const audio = new Audio("data:audio/mp3;base64," + message.audio);
-    audio.play();
-    setAudio(audio);
-    audio.onended = onMessagePlayed;
+    
+    // Check if audio data exists
+    if (message.audio && message.audio.length > 0) {
+      const audio = new Audio("data:audio/mp3;base64," + message.audio);
+      audioRef.current = audio;
+      isPlayingRef.current = true;
+      
+      // Set up event handlers before playing
+      audio.onended = () => {
+        console.log("🔊 Audio playback ended");
+        audioRef.current = null;
+        isPlayingRef.current = false;
+        currentMessageIdRef.current = null;
+        setAudio(null);
+        onMessagePlayed();
+      };
+      
+      audio.onerror = (error) => {
+        console.error("❌ Audio error:", error);
+        audioRef.current = null;
+        isPlayingRef.current = false;
+        currentMessageIdRef.current = null;
+        setAudio(null);
+        setTimeout(onMessagePlayed, 1000);
+      };
+      
+      // Play audio with proper error handling
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("🔊 Audio playback started successfully");
+            setAudio(audio);
+            
+            // Store audio reference for interruption
+            if (setCurrentAudio) {
+              setCurrentAudio(audio);
+            }
+          })
+          .catch((error) => {
+            console.warn("Audio playback failed:", error.message);
+            isPlayingRef.current = false;
+            currentMessageIdRef.current = null;
+            // Only auto-advance if it's a real error, not an interruption
+            if (error.name !== 'AbortError') {
+              setTimeout(onMessagePlayed, 2000);
+            }
+          });
+      }
+    } else {
+      console.warn("⚠️ No audio data available - TTS quota exceeded or API error");
+      console.log("💡 The AI response was received but couldn't be converted to speech");
+      console.log("📝 Text response:", message.text);
+      currentMessageIdRef.current = null;
+      setTimeout(onMessagePlayed, 2000);
+    }
   }, [message]);
 
 
@@ -86,7 +184,7 @@ export function Avatar(props) {
     }
 
     const appliedMorphTargets = [];
-    if (message && lipsync) {
+    if (message && lipsync && audio) {
       const currentAudioTime = audio.currentTime;
       for (let i = 0; i < lipsync.mouthCues.length; i++) {
         const mouthCue = lipsync.mouthCues[i];

@@ -41,7 +41,7 @@ export const NeonButton = ({
       disabled={disabled}
       className={`
         ${style.bg} ${style.border} ${style.text} ${style.hover}
-        border-2 rounded px-4 py-3 font-bold transition-all
+        border-2 rounded px-3 md:px-4 py-2 md:py-3 font-bold transition-all
         ${!disabled ? style.glow : 'opacity-30 cursor-not-allowed'}
         ${className}
       `}

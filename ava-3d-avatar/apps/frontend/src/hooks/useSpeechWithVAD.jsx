@@ -5,23 +5,21 @@ const backendUrl = "http://localhost:3000";
 
 const SpeechContext = createContext();
 
-export const SpeechProvider = ({ children }) => {
-  const [conversationMode, setConversationMode] = useState(false); // Main toggle
+export const SpeechProviderWithVAD = ({ children }) => {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState();
   const [loading, setLoading] = useState(false);
+  const [vadEnabled, setVadEnabled] = useState(false);
   const [currentAudio, setCurrentAudio] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false); // Prevent overlapping requests
   
   const chunksRef = useRef([]);
   const recordingTimeoutRef = useRef(null);
-  const lastRequestTimeRef = useRef(0); // Debounce requests
 
-  // Voice Activity Detection - only active when conversation mode is ON
+  // Voice Activity Detection
   const { isSpeaking: vadIsSpeaking } = useVoiceActivityDetection({
-    enabled: conversationMode,
+    enabled: vadEnabled,
     silenceDelay: 1500,
     volumeThreshold: -50,
     onSpeechStart: () => {
@@ -64,21 +62,6 @@ export const SpeechProvider = ({ children }) => {
   };
 
   const sendAudioData = async (audioBlob) => {
-    // Prevent overlapping requests
-    const now = Date.now();
-    if (now - lastRequestTimeRef.current < 1000) {
-      console.log("⚠️ Request too soon, debouncing...");
-      return;
-    }
-    lastRequestTimeRef.current = now;
-    
-    if (isProcessing) {
-      console.log("⚠️ Already processing a request, skipping...");
-      return;
-    }
-    
-    setIsProcessing(true);
-    
     const reader = new FileReader();
     reader.readAsDataURL(audioBlob);
     reader.onloadend = async function () {
@@ -112,7 +95,6 @@ export const SpeechProvider = ({ children }) => {
         alert(`Speech processing failed: ${error.message}\n\nPlease check:\n- Backend server is running\n- API keys are configured\n- Network connection is stable`);
       } finally {
         setLoading(false);
-        setIsProcessing(false);
       }
     };
   };
@@ -120,13 +102,7 @@ export const SpeechProvider = ({ children }) => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       navigator.mediaDevices
-        .getUserMedia({ 
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          } 
-        })
+        .getUserMedia({ audio: true })
         .then((stream) => {
           const newMediaRecorder = new MediaRecorder(stream);
           newMediaRecorder.onstart = initiateRecording;
@@ -172,30 +148,12 @@ export const SpeechProvider = ({ children }) => {
     }
   };
 
-  const toggleConversationMode = () => {
-    const newMode = !conversationMode;
-    setConversationMode(newMode);
-    console.log(`🗣️ Conversation Mode: ${newMode ? 'ENABLED' : 'DISABLED'}`);
-    
-    if (!newMode) {
-      // When disabling, stop any ongoing recording
-      if (recording) {
-        stopRecording();
-      }
-      // Don't interrupt audio playback when disabling conversation mode
-      // Just clear the message queue for future messages
-      setMessages([]);
-    }
+  const toggleVAD = () => {
+    setVadEnabled(!vadEnabled);
+    console.log(`🎤 Voice Activity Detection: ${!vadEnabled ? 'ENABLED' : 'DISABLED'}`);
   };
 
   const tts = async (message) => {
-    // Prevent overlapping requests
-    if (isProcessing || loading) {
-      console.log("⚠️ Already processing, skipping request...");
-      return;
-    }
-    
-    setIsProcessing(true);
     setLoading(true);
     console.log(`💬 Sending text message: "${message}"`);
     
@@ -225,28 +183,30 @@ export const SpeechProvider = ({ children }) => {
       alert(`Message processing failed: ${error.message}\n\nPlease check:\n- Backend server is running\n- API keys are configured\n- Network connection is stable`);
     } finally {
       setLoading(false);
-      setIsProcessing(false);
     }
   };
 
   const onMessagePlayed = () => {
-    console.log("📤 Message played, advancing queue");
     setMessages((messages) => messages.slice(1));
     setCurrentAudio(null);
   };
 
+  const interruptAvatar = () => {
+    console.log('⏸️ Manually interrupting avatar');
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+    }
+    setMessages([]);
+    setMessage(null);
+  };
+
   useEffect(() => {
     if (messages.length > 0) {
-      // Only set message if there isn't one currently playing
-      if (!message || message !== messages[0]) {
-        console.log("📨 Setting next message from queue");
-        setMessage(messages[0]);
-      }
+      setMessage(messages[0]);
     } else {
-      if (message) {
-        console.log("📭 Queue empty, clearing message");
-        setMessage(null);
-      }
+      setMessage(null);
     }
   }, [messages]);
 
@@ -260,11 +220,12 @@ export const SpeechProvider = ({ children }) => {
         message,
         onMessagePlayed,
         loading,
-        conversationMode,
-        toggleConversationMode,
+        vadEnabled,
+        toggleVAD,
         vadIsSpeaking,
         currentAudio,
-        setCurrentAudio
+        setCurrentAudio,
+        interruptAvatar
       }}
     >
       {children}
@@ -272,10 +233,10 @@ export const SpeechProvider = ({ children }) => {
   );
 };
 
-export const useSpeech = () => {
+export const useSpeechWithVAD = () => {
   const context = useContext(SpeechContext);
   if (!context) {
-    throw new Error("useSpeech must be used within a SpeechProvider");
+    throw new Error("useSpeechWithVAD must be used within a SpeechProviderWithVAD");
   }
   return context;
 };
