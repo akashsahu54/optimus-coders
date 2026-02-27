@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import * as THREE from "three";
 import { useSpeech } from "../hooks/useSpeech";
+import { useVapiAudio } from "../hooks/useVapiAudio";
 import facialExpressions from "../constants/facialExpressions";
 import visemesMapping from "../constants/visemesMapping";
 import morphTargets from "../constants/morphTargets";
@@ -13,11 +14,15 @@ export function Avatar(props) {
   const { nodes, materials, scene } = useGLTF("/models/avatar.glb");
   const { animations } = useGLTF("/models/animations.glb");
   const { message, onMessagePlayed, setCurrentAudio } = useSpeech();
+  const { vapiMessage, isVapiActive } = useVapiAudio();
   const [lipsync, setLipsync] = useState();
   const [setupMode, setSetupMode] = useState(false);
   const audioRef = useRef(null);
-  const isPlayingRef = useRef(false); // Prevent multiple simultaneous plays
-  const currentMessageIdRef = useRef(null); // Track which message we're playing
+  const isPlayingRef = useRef(false);
+  const currentMessageIdRef = useRef(null);
+
+  // Use Vapi message if active, otherwise use regular message
+  const activeMessage = isVapiActive && vapiMessage ? vapiMessage : message;
 
   useEffect(() => {
     // Cleanup function to stop any playing audio on unmount
@@ -31,9 +36,8 @@ export function Avatar(props) {
   }, []);
 
   useEffect(() => {
-    if (!message) {
+    if (!activeMessage) {
       setAnimation("Idle");
-      // Clean up audio if exists
       if (audioRef.current && !audioRef.current.paused) {
         console.log("🛑 Stopping previous audio - no message");
         audioRef.current.pause();
@@ -46,16 +50,24 @@ export function Avatar(props) {
       return;
     }
     
-    // Create a unique ID for this message to prevent duplicate processing
-    const messageId = `${message.animation}_${message.audio?.substring(0, 50)}`;
+    // For Vapi messages, just set animation and lipsync
+    if (activeMessage.isVapi) {
+      console.log("🎤 Vapi message - setting animation:", activeMessage.animation);
+      setAnimation(activeMessage.animation);
+      setFacialExpression(activeMessage.facialExpression);
+      setLipsync(activeMessage.lipsync);
+      // Vapi handles audio playback, we just animate
+      return;
+    }
     
-    // If we're already playing this exact message, skip
+    // Regular message handling (existing code)
+    const messageId = `${activeMessage.animation}_${activeMessage.audio?.substring(0, 50)}`;
+    
     if (currentMessageIdRef.current === messageId) {
       console.log("⚠️ Already processing this message, skipping duplicate");
       return;
     }
     
-    // If we're playing a different message, stop it first
     if (isPlayingRef.current && audioRef.current) {
       console.log("🛑 Stopping previous message to play new one");
       audioRef.current.pause();
@@ -63,20 +75,17 @@ export function Avatar(props) {
       isPlayingRef.current = false;
     }
     
-    // Mark this message as being processed
     currentMessageIdRef.current = messageId;
     
-    setAnimation(message.animation);
-    setFacialExpression(message.facialExpression);
-    setLipsync(message.lipsync);
+    setAnimation(activeMessage.animation);
+    setFacialExpression(activeMessage.facialExpression);
+    setLipsync(activeMessage.lipsync);
     
-    // Check if audio data exists
-    if (message.audio && message.audio.length > 0) {
-      const audio = new Audio("data:audio/mp3;base64," + message.audio);
+    if (activeMessage.audio && activeMessage.audio.length > 0) {
+      const audio = new Audio("data:audio/mp3;base64," + activeMessage.audio);
       audioRef.current = audio;
       isPlayingRef.current = true;
       
-      // Set up event handlers before playing
       audio.onended = () => {
         console.log("🔊 Audio playback ended");
         audioRef.current = null;
@@ -95,7 +104,6 @@ export function Avatar(props) {
         setTimeout(onMessagePlayed, 1000);
       };
       
-      // Play audio with proper error handling
       const playPromise = audio.play();
       
       if (playPromise !== undefined) {
@@ -104,7 +112,6 @@ export function Avatar(props) {
             console.log("🔊 Audio playback started successfully");
             setAudio(audio);
             
-            // Store audio reference for interruption
             if (setCurrentAudio) {
               setCurrentAudio(audio);
             }
@@ -113,20 +120,17 @@ export function Avatar(props) {
             console.warn("Audio playback failed:", error.message);
             isPlayingRef.current = false;
             currentMessageIdRef.current = null;
-            // Only auto-advance if it's a real error, not an interruption
             if (error.name !== 'AbortError') {
               setTimeout(onMessagePlayed, 2000);
             }
           });
       }
     } else {
-      console.warn("⚠️ No audio data available - TTS quota exceeded or API error");
-      console.log("💡 The AI response was received but couldn't be converted to speech");
-      console.log("📝 Text response:", message.text);
+      console.warn("⚠️ No audio data available");
       currentMessageIdRef.current = null;
       setTimeout(onMessagePlayed, 2000);
     }
-  }, [message]);
+  }, [activeMessage]);
 
 
   const group = useRef();
@@ -184,7 +188,7 @@ export function Avatar(props) {
     }
 
     const appliedMorphTargets = [];
-    if (message && lipsync && audio) {
+    if (activeMessage && lipsync && audio) {
       const currentAudioTime = audio.currentTime;
       for (let i = 0; i < lipsync.mouthCues.length; i++) {
         const mouthCue = lipsync.mouthCues[i];
@@ -192,6 +196,20 @@ export function Avatar(props) {
           appliedMorphTargets.push(visemesMapping[mouthCue.value]);
           lerpMorphTarget(visemesMapping[mouthCue.value], 1, 0.2);
           break;
+        }
+      }
+    } else if (activeMessage && activeMessage.isVapi && lipsync && activeMessage.isSpeaking) {
+      // For Vapi, use real-time audio-reactive lip-sync
+      if (lipsync.mouthCues && lipsync.mouthCues.length > 0) {
+        // Use the current mouth cue
+        const mouthCue = lipsync.mouthCues[0];
+        const morphTarget = visemesMapping[mouthCue.value];
+        
+        if (morphTarget) {
+          appliedMorphTargets.push(morphTarget);
+          // Use volume-based intensity for more natural movement
+          const intensity = activeMessage.audioVolume || 0.8;
+          lerpMorphTarget(morphTarget, intensity, 0.4);
         }
       }
     }

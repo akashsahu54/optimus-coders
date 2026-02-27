@@ -25,6 +25,9 @@ export const VapiProvider = ({ children }) => {
     
     const vapiInstance = new Vapi(publicKey);
     setVapi(vapiInstance);
+    
+    // Make it globally accessible for ChatWindow
+    window.vapiGlobalInstance = vapiInstance;
 
     // Event listeners
     vapiInstance.on("call-start", () => {
@@ -38,6 +41,50 @@ export const VapiProvider = ({ children }) => {
       setIsCallActive(false);
       setIsSpeaking(false);
       setTranscript("");
+      
+      // Check if it was an unexpected disconnect (not user initiated)
+      if (window.vapiShouldReconnect) {
+        console.log("🔄 Attempting to reconnect...");
+        setTimeout(() => {
+          if (window.vapiShouldReconnect) {
+            console.log("🔄 Reconnecting Vapi call...");
+            vapiInstance.start({
+              model: {
+                provider: "groq",
+                model: "llama-3.3-70b-versatile",
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are AVA, a helpful and friendly AI assistant. You are multilingual and can speak in Hindi (हिंदी), English, and Marathi (मराठी).
+
+IMPORTANT LANGUAGE RULES:
+- Detect the language the user is speaking and respond in THE SAME LANGUAGE
+- If user speaks in Hindi, respond in Hindi
+- If user speaks in English, respond in English  
+- If user speaks in Marathi, respond in Marathi
+- If user asks you to switch languages, immediately switch to that language
+- Be natural and conversational in whichever language you use`
+                  }
+                ],
+                temperature: 0.7,
+              },
+              voice: {
+                provider: "11labs",
+                voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
+                model: "eleven_multilingual_v2",
+              },
+              transcriber: {
+                provider: "deepgram",
+                model: "nova-2",
+                language: "multi",
+              },
+              silenceTimeoutSeconds: 60,
+              maxDurationSeconds: 1200,
+              backgroundSound: "off",
+            });
+          }
+        }, 2000);
+      }
     });
 
     vapiInstance.on("speech-start", () => {
@@ -140,74 +187,54 @@ export const VapiProvider = ({ children }) => {
 
     try {
       console.log("📞 Starting Vapi call...");
+      window.vapiShouldReconnect = true; // Enable auto-reconnect
       
-      // Option 1: Use pre-configured assistant
-      if (assistantId) {
-        await vapi.start(assistantId);
-      } 
-      // Option 2: Use inline assistant configuration
-      else {
-        await vapi.start({
-          model: {
-            provider: "groq",
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              {
-                role: "system",
-                content: `You are AVA, an AI customer support assistant. You are helpful, friendly, and professional.
+      // Multilingual configuration - supports Hindi, English, Marathi
+      await vapi.start({
+        model: {
+          provider: "groq",
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: `You are AVA, a helpful and friendly AI assistant. You are multilingual and can speak in Hindi (हिंदी), English, and Marathi (मराठी).
 
-You MUST respond in Hindi (हिंदी) language only. The user will speak in Hindi and you should reply in Hindi.
+IMPORTANT LANGUAGE RULES:
+- Detect the language the user is speaking and respond in THE SAME LANGUAGE
+- If user speaks in Hindi, respond in Hindi
+- If user speaks in English, respond in English  
+- If user speaks in Marathi, respond in Marathi
+- If user asks you to switch languages (e.g., "speak in English", "अंग्रेजी में बोलो", "इंग्रजीत बोला"), immediately switch to that language
+- Be natural and conversational in whichever language you use
 
 Your responses should be:
-- Clear and concise (स्पष्ट और संक्षिप्त)
-- Empathetic and understanding (सहानुभूतिपूर्ण)
-- Solution-oriented (समाधान-उन्मुख)
-- Natural and conversational (प्राकृतिक और संवादात्मक)
+- Clear and concise
+- Helpful and friendly
+- Natural and conversational
+- In the same language as the user
 
-Always respond in Hindi. Use Devanagari script.
-
-Detect the customer's emotion and respond appropriately. If they seem frustrated, be extra patient. If they're happy, match their energy.`
-              }
-            ],
-            temperature: 0.7,
-          },
-          voice: {
-            provider: "11labs",
-            voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
-            model: "eleven_multilingual_v2",  // Supports multiple languages
-          },
-          transcriber: {
-            provider: "deepgram",
-            model: "nova-2",
-            language: "hi",  // Hindi language code
-            endpointing: 255,
-          },
-          // First message to greet the user in Hindi
-          firstMessage: "नमस्ते! मैं AVA हूं, आपकी AI सहायक। मैं आपकी कैसे मदद कर सकती हूं?",
-          // Silence timeout settings - increased significantly
-          silenceTimeoutSeconds: 60,  // 60 seconds before timeout
-          maxDurationSeconds: 1200,   // 20 minutes max call duration
-          // Background sound to keep connection alive
-          backgroundSound: "off",
-          // Optional: Add custom functions
-          functions: [
-            {
-              name: "escalate_to_human",
-              description: "Escalate the conversation to a human agent when the customer requests it or the issue is too complex",
-              parameters: {
-                type: "object",
-                properties: {
-                  reason: {
-                    type: "string",
-                    description: "The reason for escalation"
-                  }
-                },
-                required: ["reason"]
-              }
+You can switch between languages freely based on user preference.`
             }
-          ]
-        });
-      }
+          ],
+          temperature: 0.7,
+        },
+        voice: {
+          provider: "11labs",
+          voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
+          model: "eleven_multilingual_v2",
+        },
+        transcriber: {
+          provider: "deepgram",
+          model: "nova-2",
+          language: "multi", // Multi-language support
+        },
+        firstMessage: "Hello! I'm AVA. I can speak in Hindi, English, and Marathi. How can I help you today?",
+        silenceTimeoutSeconds: 60,
+        maxDurationSeconds: 1200,
+        backgroundSound: "off",
+      });
+      
+      console.log("✅ Vapi call started successfully");
     } catch (err) {
       console.error("Failed to start call:", err);
       setError(err.message);
@@ -217,6 +244,7 @@ Detect the customer's emotion and respond appropriately. If they seem frustrated
   const stopCall = () => {
     if (vapi) {
       console.log("📞 Stopping Vapi call...");
+      window.vapiShouldReconnect = false; // Disable auto-reconnect
       vapi.stop();
     }
   };

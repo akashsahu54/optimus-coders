@@ -4,7 +4,7 @@ import { EnergyPulse } from './EnergyPulse';
 
 export const AIReactor = ({ isActive, isThinking, children }) => {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-5">
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-5" style={{ marginRight: '35%' }}>
       {/* Outer Rotating Ring */}
       <RotatingRing isActive={isActive} isThinking={isThinking} />
       

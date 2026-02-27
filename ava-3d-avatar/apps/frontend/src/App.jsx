@@ -10,6 +10,7 @@ import { HUDPanel } from "./components/hud/HUDPanel";
 import { CommandConsole } from "./components/console/CommandConsole";
 import { VoiceVisualizer } from "./components/effects/VoiceVisualizer";
 import { BootSequence } from "./components/effects/BootSequence";
+import { ChatWindow } from "./components/ChatWindow";
 import { useSpeech } from "./hooks/useSpeech";
 import { VapiProvider, useVapi } from "./hooks/useVapi";
 import { VapiControls } from "./components/VapiControls";
@@ -99,43 +100,10 @@ function AppContent() {
       {/* Voice Visualizer */}
       <VoiceVisualizer isActive={recording || vadIsSpeaking} />
       
-      {/* Vapi Controls - New! */}
-      <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000 }}>
-        <VapiControls />
-      </div>
+      {/* Chat Window with integrated call button */}
+      <ChatWindow />
       
-      {/* Command Console - Disabled when Vapi is active */}
-      {!vapiActive && (
-        <CommandConsole
-          onSend={handleSend}
-          conversationMode={conversationMode}
-          onToggleConversation={toggleConversationMode}
-          isRecording={recording}
-          isLoading={loading}
-          isProcessing={!!message}
-          vadIsSpeaking={vadIsSpeaking}
-        />
-      )}
-      
-      {/* Vapi Active Indicator */}
-      {vapiActive && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          padding: '12px 24px',
-          background: 'rgba(34, 197, 94, 0.2)',
-          border: '1px solid rgb(34, 197, 94)',
-          borderRadius: '8px',
-          color: 'rgb(34, 197, 94)',
-          fontWeight: 'bold',
-          zIndex: 1000,
-          backdropFilter: 'blur(10px)'
-        }}>
-          🎙️ VAPI VOICE MODE ACTIVE - Speak naturally
-        </div>
-      )}
+      {/* Vapi Active Indicator - Removed, now in chat window */}
       </CyberpunkLayout>
       </>
   );
