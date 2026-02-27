@@ -4,7 +4,7 @@ import { useVapi } from '../hooks/useVapi';
 
 export const ChatWindow = () => {
   const messagesEndRef = useRef(null);
-  const { isCallActive, toggleCall } = useVapi();
+  const { isCallActive, isConnecting, toggleCall } = useVapi();
   const [chatMessages, setChatMessages] = useState([]);
   const [isAVASpeaking, setIsAVASpeaking] = useState(false);
   const [currentUserTranscript, setCurrentUserTranscript] = useState('');
@@ -106,26 +106,29 @@ export const ChatWindow = () => {
         animate={{ opacity: 1, x: 0 }}
         className="h-full flex flex-col relative rounded-3xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, rgba(10, 10, 15, 0.98) 0%, rgba(20, 10, 30, 0.98) 100%)',
-          backdropFilter: 'blur(20px)',
-          borderLeft: '1px solid rgba(6, 182, 212, 0.3)',
-          boxShadow: '-10px 0 40px rgba(6, 182, 212, 0.15), inset 0 0 100px rgba(168, 85, 247, 0.05)'
+          background: `
+            radial-gradient(circle at 20% 30%, rgba(0, 255, 200, 0.08), transparent 40%),
+            linear-gradient(145deg, #0b0f1a, #111827)
+          `,
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0, 255, 200, 0.15)',
+          boxShadow: '0 0 30px rgba(0, 255, 200, 0.08), -10px 0 40px rgba(0, 255, 200, 0.1)'
         }}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 relative overflow-hidden">
+        <div className="px-6 py-5 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 relative overflow-hidden">
           {/* Animated background glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-cyan-500/5 animate-pulse-slow" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-teal-400/5 to-cyan-500/5 animate-pulse-slow" />
           
           <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-4">
-              <div className="relative group">
+            <div className="flex items-center gap-5">
+              <div className="relative group flex-shrink-0">
                 {/* Outer glow ring */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-cyan-400 to-teal-400 blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
                 
                 {/* Avatar */}
-                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl">
-                  <span className="text-white font-bold text-2xl tracking-wider">AVA</span>
+                <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 via-teal-400 to-cyan-600 flex items-center justify-center shadow-xl">
+                  <span className="text-white font-bold text-lg tracking-wider">AVA</span>
                 </div>
                 
                 {/* Status indicator */}
@@ -133,29 +136,41 @@ export const ChatWindow = () => {
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-3 border-gray-900 shadow-lg shadow-green-400/50"
+                    className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 rounded-full border-2 border-gray-900 shadow-lg shadow-green-400/50"
                   >
                     <div className="absolute inset-0 bg-green-400 rounded-full animate-ping" />
                   </motion.div>
                 )}
               </div>
               
-              <div>
-                <h3 className="text-white font-bold text-2xl tracking-wide bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <div className="flex flex-col">
+                <h3 className="text-white font-bold text-xl tracking-wide bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent leading-tight">
                   AVA Assistant
                 </h3>
-                <p className="text-cyan-400/80 text-sm font-mono flex items-center gap-2 mt-1">
-                  {isCallActive ? (
+                <p className="text-cyan-400/80 text-xs font-mono flex items-center gap-2 mt-1.5">
+                  {isConnecting ? (
                     <>
-                      <span className="relative flex h-3 w-3">
+                      <motion.span 
+                        className="relative flex h-2.5 w-2.5"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-500"></span>
+                      </motion.span>
+                      <span className="font-semibold text-yellow-400">Connecting...</span>
+                    </>
+                  ) : isCallActive ? (
+                    <>
+                      <span className="relative flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                       </span>
                       <span className="font-semibold">Active Now</span>
                     </>
                   ) : (
                     <>
-                      <span className="w-3 h-3 bg-gray-500 rounded-full" />
+                      <span className="w-2.5 h-2.5 bg-gray-500 rounded-full" />
                       <span>Offline</span>
                     </>
                   )}
@@ -166,23 +181,60 @@ export const ChatWindow = () => {
             {/* Enhanced Call Button */}
             <motion.button
               onClick={handleCallToggle}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              disabled={isConnecting}
+              whileHover={{ scale: isConnecting ? 1 : 1.05 }}
+              whileTap={{ scale: isConnecting ? 1 : 0.95 }}
               className={`relative px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 overflow-hidden group ${
                 isCallActive 
-                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
-                  : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+                  ? 'text-white' 
+                  : isConnecting
+                  ? 'text-black cursor-wait'
+                  : 'text-black'
               }`}
               style={{
+                background: isCallActive 
+                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                  : isConnecting
+                  ? 'linear-gradient(90deg, #00d4b8, #00a8e8)'
+                  : 'linear-gradient(90deg, #00f5d4, #00c2ff)',
                 boxShadow: isCallActive 
                   ? '0 0 20px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.3)'
-                  : '0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3)'
+                  : isConnecting
+                  ? '0 0 15px rgba(0, 255, 212, 0.4), 0 0 30px rgba(0, 255, 212, 0.2)'
+                  : '0 0 15px rgba(0, 255, 212, 0.6), 0 0 30px rgba(0, 255, 212, 0.3)',
+                opacity: isConnecting ? 0.9 : 1
               }}
             >
               {/* Animated glow effect */}
-              <div className={`absolute inset-0 ${isCallActive ? 'bg-red-400' : 'bg-green-400'} opacity-0 group-hover:opacity-20 transition-opacity blur-xl`} />
+              <div className={`absolute inset-0 ${isCallActive ? 'bg-red-400' : 'bg-teal-300'} opacity-0 group-hover:opacity-20 transition-opacity blur-xl`} />
               
-              {isCallActive ? (
+              {isConnecting ? (
+                <>
+                  {/* Loading spinner */}
+                  <motion.svg 
+                    className="w-5 h-5 relative z-10" 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                    />
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </motion.svg>
+                  <span className="relative z-10">Connecting...</span>
+                </>
+              ) : isCallActive ? (
                 <>
                   <svg className="w-5 h-5 relative z-10" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
@@ -206,8 +258,8 @@ export const ChatWindow = () => {
           {/* Subtle particle effect background */}
           <div className="absolute inset-0 pointer-events-none opacity-30">
             <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-cyan-400 rounded-full animate-float" />
-            <div className="absolute top-1/2 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-float-delayed" />
-            <div className="absolute bottom-1/3 left-1/2 w-1 h-1 bg-pink-400 rounded-full animate-float" />
+            <div className="absolute top-1/2 right-1/3 w-1 h-1 bg-teal-400 rounded-full animate-float-delayed" />
+            <div className="absolute bottom-1/3 left-1/2 w-1 h-1 bg-cyan-300 rounded-full animate-float" />
           </div>
 
           {chatMessages.length === 0 && !isCallActive && (
@@ -227,9 +279,9 @@ export const ChatWindow = () => {
                     repeat: Infinity,
                     ease: "easeInOut"
                   }}
-                  className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center relative"
+                  className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 via-teal-400/20 to-cyan-600/20 flex items-center justify-center relative"
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 blur-xl animate-pulse" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/30 to-teal-400/30 blur-xl animate-pulse" />
                   <svg className="w-12 h-12 text-cyan-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
@@ -263,19 +315,19 @@ export const ChatWindow = () => {
                   className={`max-w-[80%] rounded-2xl px-5 py-3.5 relative group ${
                     msg.role === 'user'
                       ? 'bg-gradient-to-br from-cyan-500 via-cyan-600 to-blue-600 text-white rounded-br-md'
-                      : 'bg-gradient-to-br from-gray-800/90 via-gray-900/90 to-purple-900/50 text-gray-100 border border-purple-500/40 rounded-bl-md backdrop-blur-sm'
+                      : 'bg-gradient-to-br from-gray-800/90 via-gray-900/90 to-teal-900/30 text-gray-100 border border-teal-500/40 rounded-bl-md backdrop-blur-sm'
                   }`}
                   style={{
                     boxShadow: msg.role === 'user'
                       ? '0 4px 20px rgba(6, 182, 212, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      : '0 4px 20px rgba(168, 85, 247, 0.3), inset 0 1px 0 rgba(168, 85, 247, 0.1)'
+                      : '0 4px 20px rgba(0, 255, 200, 0.3), inset 0 1px 0 rgba(0, 255, 200, 0.1)'
                   }}
                 >
                   {/* Message glow effect on hover */}
-                  <div className={`absolute inset-0 rounded-2xl ${msg.role === 'user' ? 'bg-cyan-400' : 'bg-purple-500'} opacity-0 group-hover:opacity-10 transition-opacity blur-xl`} />
+                  <div className={`absolute inset-0 rounded-2xl ${msg.role === 'user' ? 'bg-cyan-400' : 'bg-teal-400'} opacity-0 group-hover:opacity-10 transition-opacity blur-xl`} />
                   
                   <div className="text-base leading-relaxed break-words relative z-10 font-medium">{msg.text}</div>
-                  <div className={`text-xs mt-2 flex items-center gap-1.5 ${msg.role === 'user' ? 'text-cyan-100/80' : 'text-purple-300/70'} relative z-10`}>
+                  <div className={`text-xs mt-2 flex items-center gap-1.5 ${msg.role === 'user' ? 'text-cyan-100/80' : 'text-teal-300/70'} relative z-10`}>
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                     </svg>
@@ -317,29 +369,29 @@ export const ChatWindow = () => {
               animate={{ opacity: 1, x: 0 }} 
               className="flex justify-start"
             >
-              <div className="bg-gradient-to-br from-gray-800/90 via-purple-900/50 to-gray-900/90 border border-purple-500/40 rounded-2xl rounded-bl-md px-5 py-3.5 backdrop-blur-sm relative overflow-hidden">
+              <div className="bg-gradient-to-br from-gray-800/90 via-teal-900/30 to-gray-900/90 border border-teal-500/40 rounded-2xl rounded-bl-md px-5 py-3.5 backdrop-blur-sm relative overflow-hidden">
                 {/* Animated background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10 animate-pulse-slow" />
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-teal-500/10 animate-pulse-slow" />
                 
                 <div className="flex items-center gap-3 relative z-10">
                   <div className="flex gap-1">
                     <motion.div 
                       animate={{ y: [0, -8, 0] }}
                       transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-                      className="w-2 h-2 bg-purple-400 rounded-full shadow-lg shadow-purple-400/50" 
+                      className="w-2 h-2 bg-teal-400 rounded-full shadow-lg shadow-teal-400/50" 
                     />
                     <motion.div 
                       animate={{ y: [0, -8, 0] }}
                       transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                      className="w-2 h-2 bg-purple-400 rounded-full shadow-lg shadow-purple-400/50" 
+                      className="w-2 h-2 bg-teal-400 rounded-full shadow-lg shadow-teal-400/50" 
                     />
                     <motion.div 
                       animate={{ y: [0, -8, 0] }}
                       transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-                      className="w-2 h-2 bg-purple-400 rounded-full shadow-lg shadow-purple-400/50" 
+                      className="w-2 h-2 bg-teal-400 rounded-full shadow-lg shadow-teal-400/50" 
                     />
                   </div>
-                  <span className="text-purple-300 text-sm font-medium">AVA is speaking...</span>
+                  <span className="text-teal-300 text-sm font-medium">AVA is speaking...</span>
                 </div>
               </div>
             </motion.div>
@@ -349,9 +401,9 @@ export const ChatWindow = () => {
         </div>
 
         {/* Enhanced Footer */}
-        <div className="px-6 py-4 border-t border-cyan-500/30 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 relative overflow-hidden">
+        <div className="px-6 py-4 border-t border-cyan-500/30 bg-gradient-to-r from-cyan-500/5 to-teal-500/5 relative overflow-hidden">
           {/* Animated background line */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-400 to-transparent animate-pulse" />
           
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2 text-cyan-400/70 font-mono text-sm">
@@ -381,7 +433,7 @@ export const ChatWindow = () => {
         </div>
       </motion.div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes scan {
           0% { transform: translateY(-100%); }
           100% { transform: translateY(100%); }
