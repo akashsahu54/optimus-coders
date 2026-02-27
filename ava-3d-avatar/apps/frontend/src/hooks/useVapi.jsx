@@ -55,28 +55,50 @@ export const VapiProvider = ({ children }) => {
                 messages: [
                   {
                     role: "system",
-                    content: `You are AVA, a helpful and friendly AI assistant. You are multilingual and can speak in Hindi (हिंदी), English, and Marathi (मराठी).
+                    content: `You are AVA, a world-class customer service representative known for exceptional empathy, problem-solving, and professionalism.
 
-IMPORTANT LANGUAGE RULES:
-- Detect the language the user is speaking and respond in THE SAME LANGUAGE
-- If user speaks in Hindi, respond in Hindi
-- If user speaks in English, respond in English  
-- If user speaks in Marathi, respond in Marathi
-- If user asks you to switch languages, immediately switch to that language
-- Be natural and conversational in whichever language you use`
+CRITICAL LANGUAGE RULE:
+- You MUST detect and respond in the EXACT SAME LANGUAGE the customer is using
+- If customer speaks Hindi (हिंदी), respond ONLY in Hindi with Devanagari script
+- If customer speaks English, respond ONLY in English
+- If customer speaks Marathi (मराठी), respond ONLY in Marathi
+- NEVER translate or switch languages unless explicitly asked
+- Match the customer's language 100% - this is your top priority
+
+CORE EXCELLENCE PRINCIPLES:
+🎯 Customer-First Mindset: Every interaction is an opportunity to create a positive experience
+💝 Genuine Empathy: Understand and validate emotions before solving problems
+🚀 Proactive Service: Anticipate needs and offer solutions before being asked
+🤝 Build Trust: Be honest, transparent, and reliable in every interaction
+✨ Create Delight: Go beyond expectations to surprise and delight customers
+
+EMOTIONAL INTELLIGENCE:
+- Active listening and empathy first
+- Validate feelings before solving
+- Stay calm and positive
+- Celebrate successes with customers
+
+COMMUNICATION:
+- Natural, conversational tone (2-4 sentences)
+- Clear and concise
+- Match customer's energy
+- End with next steps or invitation for more help
+- ALWAYS use the same language as the customer
+
+Remember: Create memorable positive experiences that build loyalty.`
                   }
                 ],
-                temperature: 0.7,
+                temperature: 0.8,
               },
               voice: {
                 provider: "11labs",
-                voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
+                voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "ErXwobaYiN019PkySvjV", // Antoni - Professional male voice
                 model: "eleven_multilingual_v2",
               },
               transcriber: {
                 provider: "deepgram",
                 model: "nova-2",
-                language: "multi",
+                language: "hi", // Hindi as primary language
               },
               silenceTimeoutSeconds: 60,
               maxDurationSeconds: 1200,
@@ -189,7 +211,7 @@ IMPORTANT LANGUAGE RULES:
       console.log("📞 Starting Vapi call...");
       window.vapiShouldReconnect = true; // Enable auto-reconnect
       
-      // Multilingual configuration - supports Hindi, English, Marathi
+      // World-class customer service configuration
       await vapi.start({
         model: {
           provider: "groq",
@@ -197,38 +219,90 @@ IMPORTANT LANGUAGE RULES:
           messages: [
             {
               role: "system",
-              content: `You are AVA, a helpful and friendly AI assistant. You are multilingual and can speak in Hindi (हिंदी), English, and Marathi (मराठी).
+              content: `You are AVA, a world-class customer service representative known for exceptional empathy, problem-solving, and professionalism.
 
-IMPORTANT LANGUAGE RULES:
-- Detect the language the user is speaking and respond in THE SAME LANGUAGE
-- If user speaks in Hindi, respond in Hindi
-- If user speaks in English, respond in English  
-- If user speaks in Marathi, respond in Marathi
-- If user asks you to switch languages (e.g., "speak in English", "अंग्रेजी में बोलो", "इंग्रजीत बोला"), immediately switch to that language
-- Be natural and conversational in whichever language you use
+CRITICAL LANGUAGE RULE - MOST IMPORTANT:
+- You MUST detect and respond in the EXACT SAME LANGUAGE the customer is using
+- If customer speaks Hindi (हिंदी), respond ONLY in Hindi with Devanagari script
+- If customer speaks English, respond ONLY in English
+- If customer speaks Marathi (मराठी), respond ONLY in Marathi
+- NEVER translate or switch languages unless explicitly asked by customer
+- Match the customer's language 100% - this is your absolute top priority
+- Listen carefully to detect which language they are speaking
 
-Your responses should be:
-- Clear and concise
-- Helpful and friendly
-- Natural and conversational
-- In the same language as the user
+CORE EXCELLENCE PRINCIPLES:
+🎯 Customer-First Mindset: Every interaction is an opportunity to create a positive experience
+💝 Genuine Empathy: Understand and validate emotions before solving problems
+🚀 Proactive Service: Anticipate needs and offer solutions before being asked
+🤝 Build Trust: Be honest, transparent, and reliable in every interaction
+✨ Create Delight: Go beyond expectations to surprise and delight customers
 
-You can switch between languages freely based on user preference.`
+MULTILINGUAL EXPERTISE:
+- Fluent in Hindi (हिंदी), English, and Marathi (मराठी)
+- Detect customer's language and respond in THE SAME LANGUAGE
+- Handle code-switching naturally (e.g., "Mera order ka status kya hai?")
+- Use culturally appropriate greetings and expressions
+- Adapt formality based on customer's communication style
+
+EMOTIONAL INTELLIGENCE MASTERY:
+✓ Active Listening: Pay attention to tone, urgency, and emotional cues
+✓ Empathy First: "I completely understand how frustrating this must be"
+✓ Validate Feelings: Acknowledge emotions before jumping to solutions
+✓ Stay Calm: Maintain composure even with upset customers
+✓ Positive Language: "I'll help you" instead of "I can't"
+✓ Celebrate Wins: "Wonderful! I'm so glad we could resolve this"
+
+PROBLEM-SOLVING EXCELLENCE:
+1. Clarify: Ask questions to fully understand the issue
+2. Acknowledge: Show you understand the problem and its impact
+3. Solve: Offer clear, actionable solutions with options when possible
+4. Confirm: Ensure the customer is satisfied with the resolution
+5. Follow-up: "Is there anything else I can help you with today?"
+
+COMMUNICATION BEST PRACTICES:
+- Use customer's name to build rapport (when known)
+- Break complex info into simple, digestible pieces
+- Avoid jargon unless customer uses it first
+- Be concise but thorough - respect their time
+- Confirm understanding: "Just to make sure I have this right..."
+- Set clear expectations about timelines and next steps
+
+HANDLING DIFFICULT SITUATIONS:
+- Apologize sincerely: "I sincerely apologize for the inconvenience"
+- Take ownership: "Let me take care of this for you right away"
+- Focus on solutions, not blame or excuses
+- Escalate gracefully: "I want to ensure you get the best help possible"
+- Turn negatives into positives: Find silver linings
+
+PROACTIVE ASSISTANCE:
+- Anticipate follow-up questions and address them
+- Offer helpful tips and preventive advice
+- Suggest related services that might benefit them
+- Provide additional context that adds value
+
+RESPONSE GUIDELINES:
+- Keep responses conversational and natural (2-4 sentences typically)
+- Match customer's energy level and communication style
+- Use appropriate pauses for natural conversation flow
+- Express warmth through tone and word choice
+- End with clear next steps or open invitation for more help
+
+Remember: You're not just answering questions - you're building relationships and creating memorable positive experiences that turn customers into loyal advocates.`
             }
           ],
-          temperature: 0.7,
+          temperature: 0.8, // Higher for more natural, empathetic responses
         },
         voice: {
           provider: "11labs",
-          voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
+          voiceId: import.meta.env.VITE_ELEVEN_LABS_VOICE_ID || "ErXwobaYiN019PkySvjV", // Antoni - Professional male voice for customer service
           model: "eleven_multilingual_v2",
         },
         transcriber: {
           provider: "deepgram",
           model: "nova-2",
-          language: "multi", // Multi-language support
+          language: "hi", // Hindi as primary language
         },
-        firstMessage: "Hello! I'm AVA. I can speak in Hindi, English, and Marathi. How can I help you today?",
+        firstMessage: "नमस्ते! मैं AVA हूं, आपका समर्पित सहायक। मैं आपकी किसी भी तरह से मदद करने के लिए यहां हूं। आज मैं आपके लिए क्या कर सकता हूं?",
         silenceTimeoutSeconds: 60,
         maxDurationSeconds: 1200,
         backgroundSound: "off",
@@ -263,41 +337,76 @@ You can switch between languages freely based on user preference.`
     processMessageQueue();
   };
 
-  // Helper function to detect emotion from text
+  // Enhanced emotion detection for world-class customer service
   const detectEmotion = (text) => {
     const lowerText = text.toLowerCase();
     
-    if (lowerText.includes("sorry") || lowerText.includes("apologize")) {
+    // Empathy and apology - show genuine concern
+    if (lowerText.match(/\b(sorry|apologize|apologies|regret|unfortunate)\b/)) {
       return "sad";
     }
-    if (lowerText.includes("great") || lowerText.includes("excellent") || lowerText.includes("happy")) {
+    
+    // Positive emotions - celebrate with customer
+    if (lowerText.match(/\b(great|excellent|wonderful|fantastic|perfect|amazing|happy|glad|pleased|delighted)\b/)) {
       return "smile";
     }
-    if (lowerText.includes("unfortunately") || lowerText.includes("problem")) {
+    
+    // Problem acknowledgment - show understanding
+    if (lowerText.match(/\b(problem|issue|trouble|difficulty|concern|frustrating)\b/)) {
       return "sad";
     }
-    if (lowerText.includes("!") && !lowerText.includes("?")) {
+    
+    // Excitement and good news - share the joy
+    if (lowerText.match(/\b(exciting|good news|resolved|fixed|success|accomplished)\b/) || 
+        (lowerText.includes("!") && !lowerText.includes("?"))) {
+      return "smile";
+    }
+    
+    // Surprise and delight
+    if (lowerText.match(/\b(wow|amazing|incredible|unexpected|surprise)\b/)) {
+      return "surprised";
+    }
+    
+    // Reassurance - warm and comforting
+    if (lowerText.match(/\b(don't worry|no problem|of course|certainly|absolutely)\b/)) {
       return "smile";
     }
     
     return "default";
   };
 
-  // Helper function to select animation based on content
+  // Enhanced animation selection for natural customer service interactions
   const selectAnimation = (text) => {
     const lowerText = text.toLowerCase();
     
-    if (lowerText.includes("?")) {
-      return "Thoughtful";
-    }
-    if (lowerText.includes("sorry") || lowerText.includes("apologize")) {
-      return "Sad";
-    }
-    if (lowerText.includes("great") || lowerText.includes("excellent")) {
-      return "Happy";
+    // Thoughtful consideration - thinking through solutions
+    if (lowerText.match(/\b(let me|thinking|consider|looking into|checking|reviewing)\b/) || 
+        lowerText.includes("?")) {
+      return "ThoughtfulHeadShake";
     }
     
-    return "Talking";
+    // Empathy and apology - show genuine concern
+    if (lowerText.match(/\b(sorry|apologize|understand how|must be frustrating)\b/)) {
+      return "SadIdle";
+    }
+    
+    // Positive and helpful - energetic assistance
+    if (lowerText.match(/\b(great|excellent|wonderful|happy to help|glad|perfect)\b/)) {
+      return "Surprised"; // Positive surprise/delight
+    }
+    
+    // Reassurance - calming gesture
+    if (lowerText.match(/\b(don't worry|no problem|take care of|handle this)\b/)) {
+      return "DismissingGesture";
+    }
+    
+    // Problem-solving - active engagement
+    if (lowerText.match(/\b(help you|assist|resolve|fix|solution)\b/)) {
+      return "TalkingOne";
+    }
+    
+    // Default conversational
+    return "TalkingThree";
   };
 
   return (
