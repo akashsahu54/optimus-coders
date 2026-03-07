@@ -244,8 +244,6 @@ This project is built for educational and hackathon purposes.
 
 ## 👥 Team
 
-Built with ❤️ by Optimus Coders for [Hackathon Name]
+Built with ❤️ by Optimus Coders for Sitnovate 2.0
 
----
 
-**Note:** This is a hackathon project demonstrating the integration of modern AI technologies for customer support automation.
